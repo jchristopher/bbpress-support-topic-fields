@@ -72,15 +72,26 @@ add_action ( 'bbp_theme_before_topic_form_content', 'bbpstf_extra_fields');
 
 function bbpstf_concat_topic( $topic ) {
 
+	$hasError = false;
+
 	// check to make sure all required fields have been populated
-	if( empty( $_POST['bbpstf_did'] ) )
+	if( empty( $_POST['bbpstf_did'] ) ) {
+		$hasError = true;
 		bbp_add_error( 'bbpstf_did', __( '<strong>ERROR</strong>: You did not indicate what you did!', 'bbpstf' ) );
+	}
 
-	if( empty( $_POST['bbpstf_expected'] ) )
+	if( empty( $_POST['bbpstf_expected'] ) ) {
+		$hasError = true;
 		bbp_add_error( 'bbpstf_expected', __( '<strong>ERROR</strong>: You did not indicate what you expected to happen!', 'bbpstf' ) );
+	}
 
-	if( empty( $_POST['bbpstf_happened'] ) )
+	if( empty( $_POST['bbpstf_happened'] ) ) {
+		$hasError = true;
 		bbp_add_error( 'bbpstf_happened', __( '<strong>ERROR</strong>: You did not indicate what actually happened!', 'bbpstf' ) );
+	}
+
+	if( $hasError )
+		add_filter( 'bbp_has_errors', '__return_true' );
 
 	if( isset( $topic['post_content'] ) ) {
 		$did = !empty( $_POST['bbpstf_did'] ) ? "<strong>" . __( 'This is what I did', 'bbpstf' ) . "</strong>\n\n" . $_POST['bbpstf_did'] . "\n\n" : '';
@@ -91,7 +102,8 @@ function bbpstf_concat_topic( $topic ) {
 		$topic['post_content'] = $did . $expected . $actually . $hypothesis . $topic['post_content'];
 	}
 
-	return $topic;
+	if( !$hasError )
+		return $topic;
 }
 
 add_filter( 'bbp_new_topic_pre_insert', 'bbpstf_concat_topic' );
