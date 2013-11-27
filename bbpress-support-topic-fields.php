@@ -99,7 +99,7 @@ function bbpstf_concat_topic( $topic ) {
 		$actually = !empty( $_POST['bbpstf_happened'] ) ? "<strong>" . __( 'This is what actually happened', 'bbpstf' ) . "</strong>\n\n" . $_POST['bbpstf_happened'] . "\n\n" : '';
 		$hypothesis = !empty( $_POST['bbpstf_hypothesis'] ) ? "<strong>" . __( 'This is what I think is broken', 'bbpstf' ) . "</strong>\n\n" . $_POST['bbpstf_hypothesis'] . "\n\n" : '';
 
-		$topic['post_content'] = $did . $expected . $actually . $hypothesis . $topic['post_content'];
+		$topic['post_content'] = apply_filters( 'bbp_new_topic_pre_content', $did . $expected . $actually . $hypothesis . $topic['post_content'] );
 	}
 
 	if( !$hasError )
