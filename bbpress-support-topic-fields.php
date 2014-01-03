@@ -3,12 +3,12 @@
  Plugin Name: bbPress Support Topic Fields
  Plugin URI: http://wordpress.org/plugins/bbpress-support-topic-fields
  Description: Transform bbPress' Create Topic form into a better bug submission form
- Version: 0.1
+ Version: 0.2
  Author: Jonathan Christopher
  Author URI: http://mondaybynoon.com/
 */
 
-/*  Copyright 2012 Jonathan Christopher (email : jonathan@mondaybynoon.com)
+/*  Copyright 2014 Jonathan Christopher (email : jonathan@mondaybynoon.com)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+
+if( !defined( 'ABSPATH' ) ) die();
 
 function bbpstf_extra_fields() {
 	?>
@@ -54,7 +56,7 @@ function bbpstf_extra_fields() {
 		</div>
 	</div>
 
-	<h5><label for="bbpstf_hypothesis"><?php _e( 'This is what I think is broken', 'bbpstf' ); ?></label></h5>
+	<h5><label for="bbpstf_hypothesis"><?php _e( 'This is what I think is broken (optional)', 'bbpstf' ); ?></label></h5>
 	<div class="bbp-the-content-wrapper">
 		<div id="wp-bbp_bbpstf_hypothesis-wrap" class="wp-core-ui wp-editor-wrap html-active">
 			<div id="wp-bbp_bbpstf_hypothesis-editor-container" class="wp-editor-container">
@@ -67,8 +69,6 @@ function bbpstf_extra_fields() {
 	<p><?php _e( 'Please include relevant code snippets, active plugins, etc.', 'bbpstf' ); ?></p>
 	<?php
 }
-
-add_action ( 'bbp_theme_before_topic_form_content', 'bbpstf_extra_fields');
 
 function bbpstf_concat_topic( $topic ) {
 
@@ -90,8 +90,9 @@ function bbpstf_concat_topic( $topic ) {
 		bbp_add_error( 'bbpstf_happened', __( '<strong>ERROR</strong>: You did not indicate what actually happened!', 'bbpstf' ) );
 	}
 
-	if( $hasError )
+	if( $hasError ) {
 		add_filter( 'bbp_has_errors', '__return_true' );
+	}
 
 	if( isset( $topic['post_content'] ) ) {
 		$did = !empty( $_POST['bbpstf_did'] ) ? "<strong>" . __( 'This is what I did', 'bbpstf' ) . "</strong>\n\n" . $_POST['bbpstf_did'] . "\n\n" : '';
@@ -99,11 +100,22 @@ function bbpstf_concat_topic( $topic ) {
 		$actually = !empty( $_POST['bbpstf_happened'] ) ? "<strong>" . __( 'This is what actually happened', 'bbpstf' ) . "</strong>\n\n" . $_POST['bbpstf_happened'] . "\n\n" : '';
 		$hypothesis = !empty( $_POST['bbpstf_hypothesis'] ) ? "<strong>" . __( 'This is what I think is broken', 'bbpstf' ) . "</strong>\n\n" . $_POST['bbpstf_hypothesis'] . "\n\n" : '';
 
+		// sanitize it
 		$topic['post_content'] = apply_filters( 'bbp_new_topic_pre_content', $did . $expected . $actually . $hypothesis . $topic['post_content'] );
 	}
 
-	if( !$hasError )
+	if( !$hasError ) {
 		return $topic;
+	}
 }
 
-add_filter( 'bbp_new_topic_pre_insert', 'bbpstf_concat_topic' );
+add_action( 'wp', function() {
+
+	// allow for excluded forums
+	$excluded_forums = apply_filters( 'bbpstf_excluded_forums', array() );
+
+	if( ! in_array( get_the_ID(), $excluded_forums ) ) {
+		add_filter( 'bbp_new_topic_pre_insert', 'bbpstf_concat_topic' );
+		add_action( 'bbp_theme_before_topic_form_content', 'bbpstf_extra_fields');
+	}
+});
